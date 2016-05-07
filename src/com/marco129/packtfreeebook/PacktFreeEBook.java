@@ -17,6 +17,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.SystemColor;
 import javax.swing.border.EmptyBorder;
+
+import org.apache.commons.validator.routines.EmailValidator;
+
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
@@ -33,6 +36,10 @@ public class PacktFreeEBook {
 		if (args.length > 0) { // CLI mode
 			if (args.length < 2) {
 				System.out.println("Missing required arguments");
+				return;
+			}
+			if (!EmailValidator.getInstance().isValid(args[0])) {
+				System.out.println("Please enter a valid email address");
 				return;
 			}
 			try {
@@ -170,8 +177,20 @@ public class PacktFreeEBook {
 
 		@Override
 		public void mouseClicked(MouseEvent e) {
+			String email = emailField.getText().trim();
+			String password = String.valueOf(passwordField.getPassword()).trim();
+			if (email.equals("") || password.equals("")) {
+				JOptionPane.showMessageDialog(gui, "Please enter email address and password", "Error",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			if (!EmailValidator.getInstance().isValid(email)) {
+				JOptionPane.showMessageDialog(gui, "Please enter a valid email address", "Error",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			try {
-				Processor processor = new Processor(emailField.getText(), String.valueOf(passwordField.getPassword()));
+				Processor processor = new Processor(email, password);
 				processor.getFreeEBook();
 				JOptionPane.showMessageDialog(gui, "eBook added to your account, enjoy!", "Error",
 						JOptionPane.INFORMATION_MESSAGE);
