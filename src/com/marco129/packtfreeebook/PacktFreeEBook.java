@@ -30,6 +30,21 @@ public class PacktFreeEBook {
 	private static JButton submitButton;
 
 	public static void main(String[] args) {
+		if (args.length > 0) { // CLI mode
+			if (args.length < 2) {
+				System.out.println("Missing required arguments");
+				return;
+			}
+			try {
+				Processor processor = new Processor(args[0], args[1]);
+				processor.getFreeEBook();
+				System.out.println("eBook added to your account, enjoy!");
+			} catch (Exception e) {
+				System.out.println("Something goes wrong! Please try again");
+			}
+			return;
+		}
+
 		// Use system look and feel
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
