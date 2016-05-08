@@ -28,6 +28,7 @@ public class Processor {
 		prepare();
 		authentication();
 		claim();
+		logout();
 	}
 
 	private void prepare() throws Exception {
@@ -113,6 +114,27 @@ public class Processor {
 			
 			// Check for success response
 			if (!response.priorResponse().header("Location").equals("https://www.packtpub.com/account/my-ebooks")) {
+				throw new Exception();
+			}
+		} catch (IOException e) {
+			throw new Exception();
+		}
+	}
+
+	private void logout() throws Exception {
+		// Logout
+		initHttpClient(true);
+		Request request = new Request.Builder()
+				.header("User-Agent", userAgent)
+				.header("Cookie", sessionCookieName + "=" + sessionCookie)
+				.url("https://www.packtpub.com/logout")
+				.get()
+				.build();
+		try {
+			Response response = httpClient.newCall(request).execute();
+
+			// Check for success response
+			if (!response.isSuccessful()) {
 				throw new Exception();
 			}
 		} catch (IOException e) {
