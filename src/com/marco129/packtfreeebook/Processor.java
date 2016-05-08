@@ -16,7 +16,7 @@ public class Processor {
 	private final String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0";
 	private final String sessionCookieName = "SESS_live";
 
-	private String email, password, formId, sessionCookie, claimUrl;
+	private String email, password, formId, sessionCookie, claimUrl, bookTitle;
 	private OkHttpClient httpClient;
 
 	public Processor(String email, String password) {
@@ -57,6 +57,15 @@ public class Processor {
 			matcher = pattern.matcher(body);
 			if (matcher.find()) {
 				claimUrl = matcher.group(1);
+			} else {
+				throw new Exception();
+			}
+
+			// Retrieve eBook title
+			pattern = Pattern.compile("<div class=\"dotd-title\">\\s+<h2>\\s+(.*?)<");
+			matcher = pattern.matcher(body);
+			if (matcher.find()) {
+				setBookTitle(matcher.group(1));
 			} else {
 				throw new Exception();
 			}
@@ -147,6 +156,14 @@ public class Processor {
 				.followRedirects(followRedirect)
 				.followSslRedirects(followRedirect)
 				.build();
+	}
+
+	public String getBookTitle() {
+		return bookTitle;
+	}
+
+	public void setBookTitle(String bookTitle) {
+		this.bookTitle = bookTitle.trim();
 	}
 
 }

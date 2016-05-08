@@ -45,7 +45,7 @@ public class PacktFreeEBook {
 			try {
 				Processor processor = new Processor(args[0], args[1]);
 				processor.getFreeEBook();
-				System.out.println("eBook added to your account, enjoy!");
+				System.out.println("eBook (" + processor.getBookTitle() + ") added to your account, enjoy!");
 			} catch (Exception e) {
 				System.out.println("Something goes wrong! Please try again");
 			}
@@ -192,7 +192,8 @@ public class PacktFreeEBook {
 			try {
 				Processor processor = new Processor(email, password);
 				processor.getFreeEBook();
-				JOptionPane.showMessageDialog(gui, "eBook added to your account, enjoy!", "Error",
+				JOptionPane.showMessageDialog(gui,
+						"eBook (" + processor.getBookTitle() + ") added to your account, enjoy!", "Error",
 						JOptionPane.INFORMATION_MESSAGE);
 			} catch (Exception err) {
 				JOptionPane.showMessageDialog(gui, "Something goes wrong! Please try again", "Error",
