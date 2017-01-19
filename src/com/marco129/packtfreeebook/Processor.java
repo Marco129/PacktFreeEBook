@@ -5,30 +5,43 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.security.auth.login.FailedLoginException;
+import javax.swing.SwingWorker;
+
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class Processor {
+public class Processor extends SwingWorker<Boolean, Object> {
 
 	private final String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0";
 	private final String sessionCookieName = "SESS_live";
 
 	private String email, password, formId, sessionCookie, claimUrl, bookTitle;
+	private ProcessorListener listener;
 	private OkHttpClient httpClient;
 
-	public Processor(String email, String password) {
+	public Processor(String email, String password, ProcessorListener listener) {
 		this.email = email;
 		this.password = password;
+		this.listener= listener;
 	}
 
-	public void getFreeEBook() throws Exception {
-		prepare();
-		authentication();
-		claim();
-		logout();
+	@Override
+	public Boolean doInBackground() {
+		try {
+			prepare();
+			authentication();
+			claim();
+			logout();
+			listener.onSuccess(getBookTitle());
+			return true;
+		} catch (Exception e) {
+			listener.onFailure();
+			return false;
+		}
 	}
 
 	private void prepare() throws Exception {
@@ -49,7 +62,7 @@ public class Processor {
 			if (matcher.find()) {
 				formId = matcher.group(1);
 			} else {
-				throw new Exception();
+				throw new Exception("Missing form ID");
 			}
 
 			// Retrieve claim url
@@ -58,7 +71,7 @@ public class Processor {
 			if (matcher.find()) {
 				claimUrl = matcher.group(1);
 			} else {
-				throw new Exception();
+				throw new Exception("Missing claim url");
 			}
 
 			// Retrieve eBook title
@@ -67,10 +80,10 @@ public class Processor {
 			if (matcher.find()) {
 				setBookTitle(matcher.group(1));
 			} else {
-				throw new Exception();
+				throw new Exception("Missing eBook title");
 			}
 		} catch (IOException e) {
-			throw new Exception();
+			throw new IOException();
 		}
 	}
 
@@ -102,10 +115,10 @@ public class Processor {
 				}
 			}
 			if (sessionCookie == null) {
-				throw new Exception();
+				throw new FailedLoginException();
 			}
 		} catch (IOException e) {
-			throw new Exception();
+			throw new IOException();
 		}
 	}
 
@@ -123,10 +136,10 @@ public class Processor {
 			
 			// Check for success response
 			if (!response.priorResponse().header("Location").equals("https://www.packtpub.com/account/my-ebooks")) {
-				throw new Exception();
+				throw new Exception("Cannot claim eBook");
 			}
 		} catch (IOException e) {
-			throw new Exception();
+			throw new IOException();
 		}
 	}
 
@@ -144,10 +157,10 @@ public class Processor {
 
 			// Check for success response
 			if (!response.isSuccessful()) {
-				throw new Exception();
+				throw new Exception("Cannot logout");
 			}
 		} catch (IOException e) {
-			throw new Exception();
+			throw new IOException();
 		}
 	}
 
@@ -158,12 +171,17 @@ public class Processor {
 				.build();
 	}
 
-	public String getBookTitle() {
+	private String getBookTitle() {
 		return bookTitle;
 	}
 
-	public void setBookTitle(String bookTitle) {
+	private void setBookTitle(String bookTitle) {
 		this.bookTitle = bookTitle.trim();
+	}
+
+	interface ProcessorListener {
+		void onSuccess(String bookTitle);
+		void onFailure();
 	}
 
 }

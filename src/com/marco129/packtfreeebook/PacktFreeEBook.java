@@ -1,29 +1,31 @@
 package com.marco129.packtfreeebook;
 
-import javax.swing.JFrame;
-import javax.swing.JTextField;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.ImageIcon;
-import java.awt.Dimension;
 import java.awt.Component;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextPane;
-import javax.swing.UIManager;
-import javax.swing.JButton;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.SystemColor;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.SystemColor;
+
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.validator.routines.EmailValidator;
 
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.FlowLayout;
-import java.awt.Toolkit;
+import com.marco129.packtfreeebook.Processor.ProcessorListener;
 
 public class PacktFreeEBook {
 
@@ -32,8 +34,38 @@ public class PacktFreeEBook {
 	private static JPasswordField passwordField;
 	private static JButton submitButton;
 
+	private static ProcessorListener listener;
+
 	public static void main(String[] args) {
-		if (args.length > 0) { // CLI mode
+		listener = new ProcessorListener() {
+
+			@Override
+			public void onSuccess(String bookTitle) {
+				String message = "eBook (" + bookTitle + ") added to your account, enjoy!";
+				if (isCLIMode(args)) {
+					System.out.println(message);
+				} else {
+					JOptionPane.showMessageDialog(gui,
+						"eBook (" + bookTitle + ") added to your account, enjoy!", "Error",
+						JOptionPane.INFORMATION_MESSAGE);
+					submitButton.setEnabled(true);
+				}
+			}
+
+			@Override
+			public void onFailure() {
+				String message = "Something goes wrong! Please try again";
+				if (isCLIMode(args)) {
+					System.out.println(message);
+				} else {
+					JOptionPane.showMessageDialog(gui, message, "Error",
+						JOptionPane.ERROR_MESSAGE);
+					submitButton.setEnabled(true);
+				}
+			}
+		};
+
+		if (isCLIMode(args)) { // CLI mode
 			if (args.length < 2) {
 				System.out.println("Missing required arguments");
 				return;
@@ -42,13 +74,9 @@ public class PacktFreeEBook {
 				System.out.println("Please enter a valid email address");
 				return;
 			}
-			try {
-				Processor processor = new Processor(args[0], args[1]);
-				processor.getFreeEBook();
-				System.out.println("eBook (" + processor.getBookTitle() + ") added to your account, enjoy!");
-			} catch (Exception e) {
-				System.out.println("Something goes wrong! Please try again");
-			}
+			Processor processor = new Processor(args[0], args[1], listener);
+			processor.execute();
+			while (!processor.isDone());
 			return;
 		}
 
@@ -146,6 +174,10 @@ public class PacktFreeEBook {
 		gui.setVisible(true);
 	}
 
+	private static boolean isCLIMode(String[] args) {
+		return args.length > 0;
+	}
+
 	private static class AboutMouseListener implements MouseListener {
 
 		@Override
@@ -177,6 +209,7 @@ public class PacktFreeEBook {
 
 		@Override
 		public void mouseClicked(MouseEvent e) {
+			if (!submitButton.isEnabled()) return;
 			String email = emailField.getText().trim();
 			String password = String.valueOf(passwordField.getPassword()).trim();
 			if (email.equals("") || password.equals("")) {
@@ -189,16 +222,9 @@ public class PacktFreeEBook {
 						JOptionPane.ERROR_MESSAGE);
 				return;
 			}
-			try {
-				Processor processor = new Processor(email, password);
-				processor.getFreeEBook();
-				JOptionPane.showMessageDialog(gui,
-						"eBook (" + processor.getBookTitle() + ") added to your account, enjoy!", "Error",
-						JOptionPane.INFORMATION_MESSAGE);
-			} catch (Exception err) {
-				JOptionPane.showMessageDialog(gui, "Something goes wrong! Please try again", "Error",
-						JOptionPane.ERROR_MESSAGE);
-			}
+			submitButton.setEnabled(false);
+			Processor processor = new Processor(email, password, listener);
+			processor.execute();
 		}
 
 		@Override
